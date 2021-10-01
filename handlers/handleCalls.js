@@ -8,13 +8,16 @@ let callerId
 
 module.exports = (io, socket) => {
 	const { roomId, username } = socket.handshake.query
+	emitCallStatusLocaly()
 
 	// Пользователь инициировал звонок, записываем его id, меняем статус, оповещаем остальные сокеты
 	function initCall() {
-		emitCallStatus(true)
-		callerId = socket.id
-		const callNotice = new Notice(`${username} начал звонок`)
-		io.in(roomId).emit(ACTIONS.NOTICE, callNotice)
+		if (!isCalling) {
+			emitCallStatus(true)
+			callerId = socket.id
+			const callNotice = new Notice(`${username} начал звонок`)
+			io.in(roomId).emit(ACTIONS.NOTICE, callNotice)
+		}
 	}
 
 	// Сокет желающий присоединиться к звонку оповещает об этом звонящего
@@ -45,9 +48,9 @@ module.exports = (io, socket) => {
 		io.in(roomId).emit(ACTIONS.CALL_STATUS, status)
 	}
 
-	// Отправляем состояние только одному сокету, функция срабатывает при подключении
+	// Отправляем состояние звонка запросившему сокету (сокет запрашивает его при подключении)
 	function emitCallStatusLocaly() {
-		socket.in(roomId).emit(ACTIONS.CALL_STATUS, isCalling)
+		socket.emit(ACTIONS.CALL_STATUS, isCalling)
 	}
 
 	// Назначаем обработчики событий
@@ -56,5 +59,5 @@ module.exports = (io, socket) => {
 	socket.on(ACTIONS.CALL_SIGNAL, transmitSignal)
 	socket.on(ACTIONS.DISCONNECT, onUserLeave)
 	socket.on(ACTIONS.CALL_LEAVE, onUserLeave)
-	socket.on(ACTIONS.CONNCECT, emitCallStatusLocaly)
+	socket.on(ACTIONS.CALL_STATUS, emitCallStatusLocaly)
 }
