@@ -37,6 +37,10 @@ io.on(ACTIONS.CONNCECT, socket => {
 	})
 })
 
+app.get('*', (req, res) => {
+	res.redirect('https://chat-app-client-two.vercel.app/')
+})
+
 const PORT = process.env.PORT || 3001
 server.listen(PORT, error => {
 	if (error) throw error
